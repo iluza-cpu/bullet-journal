@@ -21,19 +21,34 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 3. Android SDK 및 Gradle 8.7 설정
-        uses: android-actions/setup-android@v3
-      - uses: gradle/actions/setup-gradle@v3
+      - name: 3. Gradle 8.7 설정
+        uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
 
-      - name: 4. Cordova 앱 생성 및 app.zip 적용
+      - name: 4. Cordova 앱 생성 및 APK 빌드
         run: |
           npm install -g cordova
           cordova create bulletApp com.taeeun.bulletjournal "마이불렛저널"
           rm -rf bulletApp/www/*
-          unzip -o app.zip -d bulletApp/www/
-          cd bulletApp
+          
+          # zip 파일이나 html 파일을 자동으로 찾아 적용
+          if ls *.zip 1> /dev/null 2>&1; then
+            unzip -o -j *.zip -d bulletApp/www/
+          elif ls *.html 1> /dev/null 2>&1; then
+            cp *.html bulletApp/www/
+          else
+            echo "오류: 업로드된 zip 또는 html 파일이 없습니다!"
+            exit 1
+          fi
+          
+          cd bulletApp/www
+          if [ ! -f index.html ]; then
+            HTML_FILE=$(ls *.html | head -n 1)
+            mv "$HTML_FILE" index.html
+          fi
+          cd ..
+          
           cordova platform add android@13.0.0
           cordova build android --debug
 
