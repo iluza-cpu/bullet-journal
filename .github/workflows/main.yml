@@ -3,6 +3,11 @@ name: Build APK from ZIP
 on:
   push:
     branches: [ "main" ]
+   paths:
+      - '**.zip'
+      - '**.html'
+      - '.github/workflows/**'
+  workflow_dispatch:
   workflow_dispatch:
 
 jobs:
