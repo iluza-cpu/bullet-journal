@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>마이 불렛저널</title>
+    <style>
+        /* =========================================================
+           1. 화이트 / 블랙 테마 변수 & 시원한 글자/비율 설정
+           ========================================================= */
+        :root {
+            --bg: #ffffff;
+            --bg-sub: #f4f4f4;
+            --text: #111111;
+            --text-sub: #555555;
+            --text-muted: #999999;
+            --border: #dddddd;
+            --border-strong: #111111;
+            --del-bg: #111111;
+            --del-text: #ffffff;
+
+            --header-pad-y: 12px;
+            --header-pad-x: 14px;
+            --font-base: 1.05rem;
+            --font-title: 1.35rem;
+            --font-section: 1.0rem;
+            --font-sub: 0.88rem;
+            --item-pad-y: 12px;
+            --item-pad-x: 14px;
+            --input-h: 44px;
+            --nav-pad-y: 10px;
+        }
+
+        body.dark {
+            --bg: #0d0d0d;
+            --bg-sub: #1c1c1c;
+            --text: #f2f2f2;
+            --text-sub: #bbbbbb;
+            --text-muted: #666666;
+            --border: #2c2c2c;
+            --border-strong: #e5e5e5;
+            --del-bg: #f2f2f2;
+            --del-text: #0d0d0d;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Pretendard", "Segoe UI", Roboto, sans-serif;
+            font-size: var(--font-base);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            height: 100dvh;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            letter-spacing: -0.02em;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .app-shell {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+        }
+
+        .view { display: none; flex-direction: column; flex: 1; overflow: hidden; height: 100%; }
+        .view.active { display: flex; }
+
+        /* =========================================================
+           2. 상단 헤더 (동기화 버튼 + 테마 버튼 포함)
+           ========================================================= */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--header-pad-y) var(--header-pad-x);
+            padding-top: calc(var(--header-pad-y) + env(safe-area-inset-top));
+            background: var(--bg);
+            border-bottom: 1.5px solid var(--border-strong);
+            flex-shrink: 0;
+            gap: 6px;
+        }
+        .header-side {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        header button.nav-arrow,
+        header button.theme-btn,
+        header button.sync-btn {
+            background: var(--bg);
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            font-size: var(--font-sub);
+            color: var(--text);
+            cursor: pointer;
+            height: 36px;
+            padding: 0 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+        }
+        header button.nav-arrow { width: 36px; padding: 0; font-size: 1.3rem; }
+        header button.nav-arrow:active,
+        header button.theme-btn:active,
+        header button.sync-btn:active { background: var(--text); color: var(--bg); }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            justify-content: center;
+            flex: 1;
+            min-width: 0;
+        }
+        .header-title strong {
+            font-size: var(--font-title);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            white-space: nowrap;
+        }
+        .header-title span.today-btn {
+            font-size: var(--font-sub);
+            color: var(--text);
+            border: 1.5px solid var(--border-strong);
+            padding: 4px 7px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        .header-title span.today-btn:active { background: var(--text); color: var(--bg); }
+
+        /* =========================================================
+           3. 메인 영역 & 세로형 인덱스 (1열 고정)
+           ========================================================= */
+        main {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 10px 0;
+            background: var(--bg);
+        }
+        .content-wrap { padding: 0 var(--item-pad-x); height: 100%; }
+
+        .index-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 6px;
+        }
+        .index-card {
+            background: var(--bg);
+            padding: 20px 18px;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+        .index-card:active { background: var(--text); color: var(--bg); }
+        .index-card div.desc strong {
+            display: block;
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+            font-weight: 800;
+        }
+        .index-card div.desc p {
+            margin: 0;
+            font-size: 0.92rem;
+            color: var(--text-sub);
+        }
+        .index-card span.icon { font-size: 1.35rem; font-weight: 800; }
+
+        /* =========================================================
+           4. 먼슬리 뷰: 화면 2/3 이상 달력 + 1/3 월별 항목 비율 고정
+           ========================================================= */
+        #view-monthly main {
+            display: flex;
+            flex-direction: column;
+            padding: 8px 0 0 0;
+            overflow: hidden;
+        }
+        .monthly-layout {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            gap: 8px;
+        }
+        .monthly-layout .cal-col {
+            flex: 2.15;
+            display: flex;
+            flex-direction: column;
+            padding: 0 var(--item-pad-x);
+            min-height: 0;
+        }
+        .monthly-layout .list-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .monthly-layout .list-col ul {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .cal-wrapper {
+            background: var(--bg);
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+        }
+        .cal-days {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: var(--text);
+            color: var(--bg);
+            text-align: center;
+            font-size: var(--font-sub);
+            font-weight: 800;
+            padding: 7px 0;
+            flex-shrink: 0;
+        }
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 1px;
+            background: var(--border);
+            flex: 1;
+        }
+        .cal-cell {
+            background: var(--bg);
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            min-height: 44px;
+        }
+        .cal-cell.today {
+            background: var(--bg-sub);
+            outline: 2px solid var(--border-strong);
+            outline-offset: -2px;
+        }
+        .cal-cell.today .cal-num { font-weight: 900; text-decoration: underline; }
+        .cal-cell.other-month { background: var(--bg-sub); opacity: 0.45; }
+        .cal-num { font-size: 0.98rem; font-weight: 600; line-height: 1; }
+        .cal-dots { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+        .cal-dot { width: 6px; height: 6px; background: var(--text); border-radius: 50%; }
+
+        /* =========================================================
+           5. 섹션 타이틀 & 본문 리스트
+           ========================================================= */
+        .section-title, .daily-section-title {
+            font-size: var(--font-section);
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            margin: 6px var(--item-pad-x) 4px;
+            padding-bottom: 6px;
+            border-bottom: 1.5px solid var(--border-strong);
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        li {
+            position: relative;
+            border-bottom: 1px solid var(--border);
+            background: var(--del-bg);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .real-delete-btn {
+            position: absolute;
+            top: 0; bottom: 0;
+            width: 76px;
+            background: var(--del-bg);
+            color: var(--del-text);
+            border: none;
+            font-weight: 800;
+            font-size: var(--font-sub);
+            z-index: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .real-delete-btn.left { left: 0; }
+        .real-delete-btn.right { right: 0; }
+
+        .swipe-wrap {
+            display: flex;
+            align-items: flex-start;
+            padding: var(--item-pad-y) var(--item-pad-x);
+            width: 100%;
+            background: var(--bg);
+            position: relative;
+            z-index: 2;
+            transition: transform 0.18s ease-out;
+            touch-action: pan-y;
+            cursor: pointer;
+        }
+
+        .bullet {
+            width: 24px;
+            font-weight: 800;
+            font-size: 1.15rem;
+            color: var(--text);
+            text-align: left;
+            line-height: 1.4;
+            flex-shrink: 0;
+        }
+        .bullet.note { color: var(--text-sub); }
+
+        .content {
+            flex: 1;
+            line-height: 1.45;
+            word-break: break-all;
+            font-size: var(--font-base);
+        }
+        .date-badge {
+            font-size: var(--font-sub);
+            color: var(--text-sub);
+            margin-right: 8px;
+            font-family: monospace;
+        }
+        .item-image {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 6px;
+            margin-top: 8px;
+            display: block;
+            border: 1px solid var(--border);
+        }
+
+        li.completed .content {
+            text-decoration: line-through;
+            color: var(--text-muted);
+        }
+        li.completed .bullet {
+            color: var(--text-muted);
+        }
+
+        /* =========================================================
+           6. 하단 입력창 & 내비게이션 바
+           ========================================================= */
+        .input-footer {
+            background: var(--bg);
+            padding: 10px var(--item-pad-x);
+            border-top: 1.5px solid var(--border-strong);
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+        .row {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            width: 100%;
+        }
+
+        .date-picker-wrap { position: relative; display: flex; align-items: center; }
+        .date-picker-btn {
+            height: var(--input-h);
+            padding: 0 10px;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            background: var(--bg-sub);
+            color: var(--text);
+            font-size: var(--font-sub);
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            white-space: nowrap;
+        }
+        .date-picker-wrap input[type="date"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        select.compact-select {
+            height: var(--input-h);
+            padding: 0 8px;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: var(--font-sub);
+            font-weight: 800;
+            outline: none;
+        }
+
+        input[type="text"], input[type="password"] {
+            flex: 1;
+            min-width: 0;
+            height: var(--input-h);
+            padding: 0 12px;
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            font-size: var(--font-base);
+            background: var(--bg);
+            color: var(--text);
+            outline: none;
+        }
+        input[type="text"]::placeholder, input[type="password"]::placeholder { color: var(--text-muted); }
+
+        button.icon-btn {
+            background: var(--bg);
+            color: var(--text);
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            font-size: var(--font-sub);
+            font-weight: 800;
+            cursor: pointer;
+            padding: 0 10px;
+            height: var(--input-h);
+            flex-shrink: 0;
+        }
+        button.action-btn {
+            background: var(--text);
+            color: var(--bg);
+            border: 1.5px solid var(--border-strong);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 0 14px;
+            height: var(--input-h);
+            flex-shrink: 0;
+        }
+
+        .preview-wrap { position: relative; display: none; flex-shrink: 0; }
+        .preview-wrap img {
+            width: var(--input-h);
+            height: var(--input-h);
+            border-radius: 6px;
+            object-fit: cover;
+            border: 1.5px solid var(--border-strong);
+            display: block;
+        }
+        .preview-wrap button {
+            position: absolute;
+            top: -5px; right: -5px;
+            background: var(--text);
+            color: var(--bg);
+            border: 1px solid var(--bg);
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            font-size: 10px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
+
+        .bottom-nav {
+            background: var(--bg);
+            display: flex;
+            justify-content: space-around;
+            padding: var(--nav-pad-y) 0 calc(var(--nav-pad-y) + env(safe-area-inset-bottom));
+            border-top: 1.5px solid var(--border-strong);
+            flex-shrink: 0;
+        }
+        .bottom-nav button {
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            flex: 1;
+            padding: 4px 0;
+            font-weight: 700;
+        }
+        .bottom-nav button .nav-sym { font-family: monospace; font-size: 1rem; }
+        .bottom-nav button.active {
+            color: var(--text);
+            font-weight: 900;
+            text-decoration: underline;
+            text-underline-offset: 5px;
+        }
+
+        /* =========================================================
+           7. GitHub 동기화 설정 모달 및 알림 토스트
+           ========================================================= */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--bg);
+            border: 2px solid var(--border-strong);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .modal-box h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
+        .modal-box label { font-size: 0.85rem; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 4px; }
+        .modal-box input { width: 100%; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
+
+        .sync-toast {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text);
+            color: var(--bg);
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            z-index: 200;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+<div class="app-shell">
+
+    <!-- 1. 인덱스 뷰 -->
+    <div id="view-index" class="view">
+        <header>
+            <button class="sync-btn" onclick="syncWithGitHub()">⇅ 동기화</button>
+            <div class="header-title"><strong>INDEX</strong></div>
+            <button class="theme-btn" onclick="toggleTheme()">◐ 테마</button>
+        </header>
+        <main>
+            <div class="content-wrap">
+                <div class="index-grid">
+                    <div class="index-card" onclick="switchView('daily')">
+                        <div class="desc"><strong>DAILY LOG</strong><p>일별 할 일(•)과 메모(-), 일정 관리</p></div>
+                        <span class="icon">→</span>
+                    </div>
+                    <div class="index-card" onclick="switchView('monthly')">
+                        <div class="desc"><strong>MONTHLY LOG</strong><p>월간 캘린더 및 이달의 목표 관리</p></div>
+                        <span class="icon">→</span>
+                    </div>
+                    <div class="index-card" onclick="switchView('notes')">
+                        <div class="desc"><strong>BRAIN DUMP</strong><p>떠오르는 생각, 상념, 아이디어 기록</p></div>
+                        <span class="icon">→</span>
+                    </div>
+                    <div class="index-card" onclick="openSyncModal()">
+                        <div class="desc"><strong>GITHUB SYNC 설정</strong><p id="sync-status-desc">토큰 및 저장소 연결 설정 (두 기기 연동)</p></div>
+                        <span class="icon">⚙</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 2. 데일리 뷰 -->
+    <div id="view-daily" class="view active">
+        <header>
+            <div class="header-side">
+                <button class="nav-arrow" onclick="moveDay(-1)">‹</button>
+                <button class="sync-btn" onclick="syncWithGitHub()" title="GitHub 동기화">⇅</button>
+            </div>
+            <div class="header-title">
+                <strong id="daily-date-text"></strong>
+                <span class="today-btn" onclick="goToday()">TODAY</span>
+            </div>
+            <div class="header-side">
+                <button class="theme-btn" onclick="toggleTheme()">◐</button>
+                <button class="nav-arrow" onclick="moveDay(1)">›</button>
+            </div>
+        </header>
+        <main>
+            <div id="daily-monthly-section" style="display:none;">
+                <div class="daily-section-title"><span>MONTHLY GOALS</span></div>
+                <ul id="list-daily-monthly"></ul>
+            </div>
+            <div class="daily-section-title">
+                <span>DAILY LOG</span>
+                <span style="font-weight:500; font-size:0.8rem; color:var(--text-muted);">터치: 완료 / 좌우밀기: 삭제</span>
+            </div>
+            <ul id="list-daily"></ul>
+        </main>
+        <div class="input-footer">
+            <div class="row">
+                <div class="date-picker-wrap">
+                    <div class="date-picker-btn" id="date-badge-daily">오늘</div>
+                    <input type="date" id="input-date-daily" onchange="updateDateBadge()">
+                </div>
+                <select id="input-type-daily" class="compact-select">
+                    <option value="task">• 할일</option>
+                    <option value="note">- 메모</option>
+                </select>
+                <input type="file" id="file-daily" accept="image/*" style="display:none" onchange="handleImage(event, 'daily')">
+                <button class="icon-btn" onclick="document.getElementById('file-daily').click()">+IMG</button>
+                <div class="preview-wrap" id="preview-daily">
+                    <img id="img-daily">
+                    <button onclick="clearImage('daily')">✕</button>
+                </div>
+                <input type="text" id="text-daily" placeholder="일정이나 메모 입력..." onkeypress="if(event.key==='Enter') addData('daily')">
+                <button class="action-btn" onclick="addData('daily')">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 먼슬리 뷰 -->
+    <div id="view-monthly" class="view">
+        <header>
+            <div class="header-side">
+                <button class="nav-arrow" onclick="moveMonth(-1)">‹</button>
+                <button class="sync-btn" onclick="syncWithGitHub()">⇅</button>
+            </div>
+            <div class="header-title">
+                <strong id="monthly-date-text"></strong>
+                <span class="today-btn" onclick="goThisMonth()">THIS MONTH</span>
+            </div>
+            <div class="header-side">
+                <button class="theme-btn" onclick="toggleTheme()">◐</button>
+                <button class="nav-arrow" onclick="moveMonth(1)">›</button>
+            </div>
+        </header>
+        <main>
+            <div class="monthly-layout">
+                <div class="cal-col">
+                    <div class="cal-wrapper">
+                        <div class="cal-days">
+                            <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
+                        </div>
+                        <div id="calendar-grid" class="cal-grid"></div>
+                    </div>
+                </div>
+                <div class="list-col">
+                    <div class="section-title"><span>MONTHLY GOALS</span></div>
+                    <ul id="list-monthly"></ul>
+                </div>
+            </div>
+        </main>
+        <div class="input-footer">
+            <div class="row">
+                <input type="file" id="file-monthly" accept="image/*" style="display:none" onchange="handleImage(event, 'monthly')">
+                <button class="icon-btn" onclick="document.getElementById('file-monthly').click()">+IMG</button>
+                <div class="preview-wrap" id="preview-monthly">
+                    <img id="img-monthly">
+                    <button onclick="clearImage('monthly')">✕</button>
+                </div>
+                <input type="text" id="text-monthly" placeholder="이달의 목표 입력..." onkeypress="if(event.key==='Enter') addData('monthly')">
+                <button class="action-btn" onclick="addData('monthly')">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 상념 노트 뷰 -->
+    <div id="view-notes" class="view">
+        <header>
+            <button class="sync-btn" onclick="syncWithGitHub()">⇅</button>
+            <div class="header-title"><strong>BRAIN DUMP</strong></div>
+            <button class="theme-btn" onclick="toggleTheme()">◐</button>
+        </header>
+        <main><ul id="list-notes"></ul></main>
+        <div class="input-footer">
+            <div class="row">
+                <input type="file" id="file-notes" accept="image/*" style="display:none" onchange="handleImage(event, 'notes')">
+                <button class="icon-btn" onclick="document.getElementById('file-notes').click()">+IMG</button>
+                <div class="preview-wrap" id="preview-notes">
+                    <img id="img-notes">
+                    <button onclick="clearImage('notes')">✕</button>
+                </div>
+                <input type="text" id="text-notes" placeholder="떠오른 생각이나 아이디어..." onkeypress="if(event.key==='Enter') addData('notes')">
+                <button class="action-btn" onclick="addData('notes')">추가</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 내비게이션 -->
+    <nav class="bottom-nav">
+        <button id="nav-index" onclick="switchView('index')"><span class="nav-sym">[≡]</span>인덱스</button>
+        <button id="nav-daily" class="active" onclick="switchView('daily')"><span class="nav-sym">[•]</span>일별</button>
+        <button id="nav-monthly" onclick="switchView('monthly')"><span class="nav-sym">[#]</span>월별</button>
+        <button id="nav-notes" onclick="switchView('notes')"><span class="nav-sym">[-]</span>상념</button>
+    </nav>
+
+</div>
+
+<!-- GitHub 동기화 설정 모달 -->
+<div class="modal-overlay" id="sync-modal">
+    <div class="modal-box">
+        <h3>GitHub 클라우드 동기화 설정</h3>
+        <div>
+            <label>저장소 경로 (아이디/저장소이름)</label>
+            <input type="text" id="gh-repo" placeholder="iluza-cpu/bullet-journal">
+        </div>
+        <div>
+            <label>GitHub Personal Access Token (repo 권한)</label>
+            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div class="modal-actions">
+            <button class="icon-btn" onclick="closeSyncModal()">닫기</button>
+            <button class="action-btn" onclick="saveSyncSettings()">저장 후 동기화</button>
+        </div>
+    </div>
+</div>
+
+<!-- 상태 토스트 메시지 -->
+<div class="sync-toast" id="sync-toast"></div>
+
+<script>
+    let currDate = new Date();
+    let currMonth = new Date();
+    let tempImages = { daily: null, monthly: null, notes: null };
+    const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
+
+    const getStr = (d) => {
+        const ofs = d.getTimezoneOffset() * 60000;
+        return new Date(d.getTime() - ofs).toISOString().split('T')[0];
+    };
+    const getMonthStr = (d) => getStr(d).substring(0, 7);
+
+    function showToast(msg, duration = 2200) {
+        const t = document.getElementById('sync-toast');
+        t.innerText = msg;
+        t.style.display = 'block';
+        clearTimeout(window._toastTimer);
+        window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, duration);
+    }
+
+    function applySavedTheme() {
+        const saved = localStorage.getItem('bj_theme') || 'light';
+        if (saved === 'dark') document.body.classList.add('dark');
+        else document.body.classList.remove('dark');
+    }
+    function toggleTheme() {
+        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.contains('dark');
+        localStorage.setItem('bj_theme', isDark ? 'dark' : 'light');
+    }
+
+    // 삭제된 항목 ID 기록 (두 기기 동기화 시 삭제한 항목이 다시 살아나는 현상 방지)
+    function getDeletedIds() {
+        return JSON.parse(localStorage.getItem('bj_deleted_ids') || '[]');
+    }
+    function markDeletedId(id) {
+        const list = getDeletedIds();
+        if (!list.includes(id)) {
+            list.push(id);
+            localStorage.setItem('bj_deleted_ids', JSON.stringify(list));
+        }
+    }
+
+    // =========================================================
+    // GitHub 양방향 스마트 동기화 로직
+    // =========================================================
+    function openSyncModal() {
+        document.getElementById('gh-repo').value = localStorage.getItem('bj_gh_repo') || 'iluza-cpu/bullet-journal';
+        document.getElementById('gh-token').value = localStorage.getItem('bj_gh_token') || '';
+        document.getElementById('sync-modal').classList.add('show');
+    }
+    function closeSyncModal() {
+        document.getElementById('sync-modal').classList.remove('show');
+    }
+    function saveSyncSettings() {
+        const repo = document.getElementById('gh-repo').value.trim();
+        const token = document.getElementById('gh-token').value.trim();
+        if (!repo || !token) {
+            alert('저장소 경로와 토큰을 모두 입력해 주세요.');
+            return;
+        }
+        localStorage.setItem('bj_gh_repo', repo);
+        localStorage.setItem('bj_gh_token', token);
+        closeSyncModal();
+        syncWithGitHub();
+    }
+
+    // UTF-8 한글/이미지 안전 Base64 인코딩/디코딩
+    function utf8ToBase64(str) {
+        const bytes = new TextEncoder().encode(str);
+        let binary = '';
+        const chunkSize = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+        }
+        return btoa(binary);
+    }
+    function base64ToUtf8(b64) {
+        const clean = b64.replace(/\s/g, '');
+        const binary = atob(clean);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return new TextDecoder().decode(bytes);
+    }
+
+    function collectLocalJournalData() {
+        const entries = {};
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith('bj_') && !['bj_theme', 'bj_gh_repo', 'bj_gh_token', 'bj_deleted_ids', 'bj_last_sync'].includes(k)) {
+                try {
+                    entries[k] = JSON.parse(localStorage.getItem(k) || '[]');
+                } catch (e) {}
+            }
+        }
+        return {
+            deletedIds: getDeletedIds(),
+            entries: entries
+        };
+    }
+
+    function mergeJournalData(localObj, remoteObj) {
+        const delSet = new Set([...(localObj.deletedIds || []), ...(remoteObj.deletedIds || [])]);
+        const mergedEntries = {};
+        const allKeys = new Set([
+            ...Object.keys(localObj.entries || {}),
+            ...Object.keys(remoteObj.entries || {})
+        ]);
+
+        allKeys.forEach(key => {
+            const lArr = (localObj.entries && localObj.entries[key]) || [];
+            const rArr = (remoteObj.entries && remoteObj.entries[key]) || [];
+            const itemMap = new Map();
+
+            [...rArr, ...lArr].forEach(item => {
+                if (!item || delSet.has(item.id)) return;
+                const existing = itemMap.get(item.id);
+                if (!existing) {
+                    itemMap.set(item.id, item);
+                } else {
+                    const exTime = existing.updatedAt || 0;
+                    const newTime = item.updatedAt || 0;
+                    if (newTime >= exTime) itemMap.set(item.id, item);
+                }
+            });
+
+            const mergedList = Array.from(itemMap.values()).sort((a, b) => (a.id || 0) - (b.id || 0));
+            mergedEntries[key] = mergedList;
+        });
+
+        return {
+            deletedIds: Array.from(delSet).slice(-1000),
+            entries: mergedEntries
+        };
+    }
+
+    async function syncWithGitHub() {
+        const repo = localStorage.getItem('bj_gh_repo') || 'iluza-cpu/bullet-journal';
+        const token = localStorage.getItem('bj_gh_token');
+
+        if (!token) {
+            openSyncModal();
+            return;
+        }
+
+        showToast('⇅ GitHub와 동기화 중...', 10000);
+        const apiUrl = `https://api.github.com/repos/${repo}/contents/bj_backup.json`;
+        const headers = {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github.v3+json'
+        };
+
+        try {
+            // 1. GitHub에서 기존 백업 파일 불러오기
+            let remoteData = { deletedIds: [], entries: {} };
+            let fileSha = null;
+
+            const getRes = await fetch(apiUrl, { headers, cache: 'no-store' });
+            if (getRes.status === 200) {
+                const fileJson = await getRes.json();
+                fileSha = fileJson.sha;
+                if (fileJson.content) {
+                    remoteData = JSON.parse(base64ToUtf8(fileJson.content));
+                } else if (fileJson.download_url) {
+                    const rawRes = await fetch(fileJson.download_url, { cache: 'no-store' });
+                    remoteData = await rawRes.json();
+                }
+            } else if (getRes.status !== 404) {
+                throw new Error('GitHub 접근 실패 (권한 또는 저장소 이름을 확인하세요)');
+            }
+
+            // 2. 로컬 데이터와 GitHub 데이터 스마트 병합
+            const localData = collectLocalJournalData();
+            const merged = mergeJournalData(localData, remoteData);
+
+            // 3. 병합된 데이터를 휴대폰 localStorage에 반영
+            localStorage.setItem('bj_deleted_ids', JSON.stringify(merged.deletedIds));
+            Object.keys(merged.entries).forEach(k => {
+                localStorage.setItem(k, JSON.stringify(merged.entries[k]));
+            });
+
+            // 4. 병합된 최신 데이터를 GitHub에 저장
+            const putBody = {
+                message: 'Sync bullet journal data',
+                content: utf8ToBase64(JSON.stringify(merged))
+            };
+            if (fileSha) putBody.sha = fileSha;
+
+            const putRes = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify(putBody)
+            });
+
+            if (!putRes.ok) {
+                throw new Error('GitHub 업로드 실패 (토큰의 repo 체크 여부를 확인하세요)');
+            }
+
+            const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+            localStorage.setItem('bj_last_sync', nowStr);
+            updateSyncStatusText();
+
+            renderDaily();
+            renderMonthly();
+            renderNotes();
+            showToast(`✔ 동기화 완료 (${nowStr})`);
+        } catch (err) {
+            showToast('✕ 동기화 오류');
+            alert('동기화 중 오류가 발생했습니다:\n' + err.message);
+        }
+    }
+
+    function updateSyncStatusText() {
+        const last = localStorage.getItem('bj_last_sync');
+        const el = document.getElementById('sync-status-desc');
+        if (el && last) {
+            el.innerText = `최근 동기화: ${last} (터치하여 설정 변경)`;
+        }
+    }
+
+    // =========================================================
+    // 기존 불렛저널 핵심 기능
+    // =========================================================
+    function updateDateBadge() {
+        const val = document.getElementById('input-date-daily').value;
+        const badge = document.getElementById('date-badge-daily');
+        if (!val) return;
+        badge.innerText = val.substring(5).replace('-', '/');
+    }
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.bottom-nav button').forEach(el => el.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        document.getElementById(`nav-${viewId}`).classList.add('active');
+
+        if (viewId === 'daily') renderDaily();
+        else if (viewId === 'monthly') renderMonthly();
+        else if (viewId === 'notes') renderNotes();
+    }
+
+    function handleImage(event, viewId) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height;
+                if (w > 600) { h *= 600 / w; w = 600; }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                tempImages[viewId] = canvas.toDataURL('image/jpeg', 0.6);
+
+                document.getElementById(`img-${viewId}`).src = tempImages[viewId];
+                document.getElementById(`preview-${viewId}`).style.display = 'block';
+                document.getElementById(`file-${viewId}`).value = '';
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function clearImage(viewId) {
+        tempImages[viewId] = null;
+        document.getElementById(`preview-${viewId}`).style.display = 'none';
+        document.getElementById(`img-${viewId}`).src = '';
+    }
+
+    function autoMigrate() {
+        const today = getStr(new Date());
+        const thisMonth = getMonthStr(new Date());
+
+        let tDailyData = JSON.parse(localStorage.getItem('bj_' + today) || '[]');
+        let tMonthData = JSON.parse(localStorage.getItem('bj_month_' + thisMonth) || '[]');
+
+        let dailyMigrated = false;
+        let monthMigrated = false;
+
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+
+            if (key.startsWith('bj_2') && key.length === 13 && key.substring(3) < today) {
+                let pData = JSON.parse(localStorage.getItem(key));
+                let changed = false;
+                pData.forEach(item => {
+                    if (item.type === 'task' && item.status === 'open') {
+                        item.status = 'migrated';
+                        item.updatedAt = Date.now();
+                        changed = true;
+                        tDailyData.push({ id: Date.now() + Math.random(), type: 'task', status: 'open', text: item.text, image: item.image, updatedAt: Date.now() });
+                        dailyMigrated = true;
+                    }
+                });
+                if (changed) localStorage.setItem(key, JSON.stringify(pData));
+            }
+
+            if (key.startsWith('bj_month_') && key.substring(9) < thisMonth) {
+                let pData = JSON.parse(localStorage.getItem(key));
+                let changed = false;
+                pData.forEach(item => {
+                    if (item.type === 'task' && item.status === 'open') {
+                        item.status = 'migrated';
+                        item.updatedAt = Date.now();
+                        changed = true;
+                        tMonthData.push({ id: Date.now() + Math.random(), type: 'task', status: 'open', text: item.text, image: item.image, updatedAt: Date.now() });
+                        monthMigrated = true;
+                    }
+                });
+                if (changed) localStorage.setItem(key, JSON.stringify(pData));
+            }
+        }
+        if (dailyMigrated) localStorage.setItem('bj_' + today, JSON.stringify(tDailyData));
+        if (monthMigrated) localStorage.setItem('bj_month_' + thisMonth, JSON.stringify(tMonthData));
+    }
+
+    function renderGenericList(data, listId, storageKey, renderCallback, isNote = false) {
+        const list = document.getElementById(listId);
+        list.innerHTML = '';
+
+        if (isNote) data.reverse();
+
+        data.forEach(item => {
+            const li = document.createElement('li');
+            const isCompleted = item.status === 'completed';
+            li.className = isCompleted ? 'completed' : '';
+
+            const deleteItem = () => {
+                markDeletedId(item.id);
+                let newData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                newData = newData.filter(i => i.id !== item.id);
+                localStorage.setItem(storageKey, JSON.stringify(newData));
+                renderCallback();
+            };
+
+            const delBtnLeft = document.createElement('button');
+            delBtnLeft.className = 'real-delete-btn left';
+            delBtnLeft.innerText = '삭제';
+            delBtnLeft.onclick = deleteItem;
+
+            const delBtnRight = document.createElement('button');
+            delBtnRight.className = 'real-delete-btn right';
+            delBtnRight.innerText = '삭제';
+            delBtnRight.onclick = deleteItem;
+
+            const swipeWrap = document.createElement('div');
+            swipeWrap.className = 'swipe-wrap';
+
+            const b = document.createElement('div');
+            const isNoteType = isNote || item.type === 'note';
+            b.className = 'bullet ' + (isNoteType ? 'note' : '');
+            if (isNoteType) {
+                b.innerText = isCompleted ? '✕' : '—';
+            } else {
+                b.innerText = isCompleted ? '✕' : (item.status === 'migrated' ? '›' : '•');
+            }
+
+            const t = document.createElement('div');
+            t.className = 'content';
+
+            if (isNote && item.dateStr) {
+                const dBadge = document.createElement('span');
+                dBadge.className = 'date-badge';
+                dBadge.innerText = item.dateStr;
+                t.appendChild(dBadge);
+            }
+
+            t.appendChild(document.createTextNode(item.text));
+
+            if (item.image) {
+                const imgTag = document.createElement('img');
+                imgTag.src = item.image;
+                imgTag.className = 'item-image';
+                t.appendChild(imgTag);
+            }
+
+            swipeWrap.append(b, t);
+            li.append(delBtnLeft, delBtnRight, swipeWrap);
+            list.append(li);
+
+            let startX = 0;
+            let startY = 0;
+            let currentDiffX = 0;
+            let isSwiping = false;
+
+            swipeWrap.addEventListener('touchstart', e => {
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+                currentDiffX = 0;
+                isSwiping = false;
+                swipeWrap.style.transition = 'none';
+            }, { passive: true });
+
+            swipeWrap.addEventListener('touchmove', e => {
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+
+                if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+                    isSwiping = true;
+                    currentDiffX = Math.max(-95, Math.min(95, dx));
+                    swipeWrap.style.transform = `translateX(${currentDiffX}px)`;
+                }
+            }, { passive: true });
+
+            swipeWrap.addEventListener('touchend', () => {
+                swipeWrap.style.transition = 'transform 0.18s ease-out';
+                if (currentDiffX < -40) {
+                    swipeWrap.style.transform = 'translateX(-76px)';
+                } else if (currentDiffX > 40) {
+                    swipeWrap.style.transform = 'translateX(76px)';
+                } else {
+                    swipeWrap.style.transform = 'translateX(0px)';
+                }
+            });
+
+            swipeWrap.addEventListener('click', () => {
+                if (isSwiping) return;
+                if (swipeWrap.style.transform && swipeWrap.style.transform !== 'translateX(0px)') {
+                    swipeWrap.style.transform = 'translateX(0px)';
+                    return;
+                }
+                let newData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                let tgt = newData.find(i => i.id === item.id);
+                if (!tgt) return;
+                tgt.status = tgt.status === 'completed' ? 'open' : 'completed';
+                tgt.updatedAt = Date.now();
+                localStorage.setItem(storageKey, JSON.stringify(newData));
+                renderCallback();
+            });
+        });
+    }
+
+    function renderDaily() {
+        const dStr = getStr(currDate);
+        const mStr = dStr.substring(0, 7);
+        const dayLabel = DAY_NAMES[currDate.getDay()];
+
+        document.getElementById('daily-date-text').innerText = `${dStr} (${dayLabel})`;
+        document.getElementById('input-date-daily').value = dStr;
+        updateDateBadge();
+
+        const mData = JSON.parse(localStorage.getItem('bj_month_' + mStr) || '[]');
+        const monthlySection = document.getElementById('daily-monthly-section');
+        if (mData.length > 0) {
+            monthlySection.style.display = 'block';
+            renderGenericList(mData, 'list-daily-monthly', 'bj_month_' + mStr, renderDaily, false);
+        } else {
+            monthlySection.style.display = 'none';
+        }
+
+        const data = JSON.parse(localStorage.getItem('bj_' + dStr) || '[]');
+        renderGenericList(data, 'list-daily', 'bj_' + dStr, renderDaily, false);
+    }
+    function moveDay(n) { currDate.setDate(currDate.getDate() + n); renderDaily(); }
+    function goToday() { currDate = new Date(); renderDaily(); }
+
+    function renderMonthly() {
+        const y = currMonth.getFullYear();
+        const m = currMonth.getMonth();
+        document.getElementById('monthly-date-text').innerText = `${y}.${String(m + 1).padStart(2, '0')}`;
+
+        const firstDay = new Date(y, m, 1).getDay();
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const todayStr = getStr(new Date());
+
+        let gridHtml = '';
+        for (let i = 0; i < firstDay; i++) {
+            gridHtml += `<div class="cal-cell other-month"></div>`;
+        }
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const isToday = dateStr === todayStr;
+
+            const dailyData = JSON.parse(localStorage.getItem('bj_' + dateStr) || '[]');
+            const openTasks = dailyData.filter(item => item.status !== 'completed').length;
+            let dotsHtml = '';
+            for (let d = 0; d < Math.min(openTasks, 5); d++) {
+                dotsHtml += '<div class="cal-dot"></div>';
+            }
+
+            gridHtml += `<div class="cal-cell ${isToday ? 'today' : ''}" onclick="goToDailyFromCal('${dateStr}')">
+                <div class="cal-num">${i}</div>
+                <div class="cal-dots">${dotsHtml}</div>
+            </div>`;
+        }
+        document.getElementById('calendar-grid').innerHTML = gridHtml;
+
+        const mStr = getMonthStr(currMonth);
+        const mData = JSON.parse(localStorage.getItem('bj_month_' + mStr) || '[]');
+        renderGenericList(mData, 'list-monthly', 'bj_month_' + mStr, renderMonthly, false);
+    }
+    function moveMonth(n) { currMonth.setMonth(currMonth.getMonth() + n); renderMonthly(); }
+    function goThisMonth() { currMonth = new Date(); renderMonthly(); }
+    function goToDailyFromCal(dateStr) {
+        currDate = new Date(dateStr + 'T00:00:00');
+        switchView('daily');
+    }
+
+    function renderNotes() {
+        const data = JSON.parse(localStorage.getItem('bj_notes') || '[]');
+        renderGenericList(data, 'list-notes', 'bj_notes', renderNotes, true);
+    }
+
+    function addData(viewId) {
+        const txtInput = document.getElementById(`text-${viewId}`);
+        const txt = txtInput.value.trim();
+        const img = tempImages[viewId];
+
+        if (!txt && !img) return;
+
+        let storageKey, newItem;
+        const now = new Date();
+        const nowMs = Date.now();
+
+        if (viewId === 'daily') {
+            const targetDate = document.getElementById('input-date-daily').value;
+            const type = document.getElementById('input-type-daily').value;
+            storageKey = 'bj_' + targetDate;
+            newItem = { id: nowMs, type, status: 'open', text: txt, image: img, updatedAt: nowMs };
+        } else if (viewId === 'monthly') {
+            const targetMonth = getMonthStr(currMonth);
+            storageKey = 'bj_month_' + targetMonth;
+            newItem = { id: nowMs, type: 'task', status: 'open', text: txt, image: img, updatedAt: nowMs };
+        } else if (viewId === 'notes') {
+            storageKey = 'bj_notes';
+            newItem = { id: nowMs, type: 'note', status: 'open', text: txt, image: img, dateStr: getStr(now) + ' ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), updatedAt: nowMs };
+        }
+
+        const data = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        data.push(newItem);
+        localStorage.setItem(storageKey, JSON.stringify(data));
+
+        txtInput.value = '';
+        clearImage(viewId);
+
+        if (viewId === 'daily') {
+            if (document.getElementById('input-date-daily').value === getStr(currDate)) renderDaily();
+            else alert('선택한 날짜(' + document.getElementById('input-date-daily').value + ')에 등록되었습니다.');
+        } else if (viewId === 'monthly') renderMonthly();
+        else if (viewId === 'notes') renderNotes();
+    }
+
+    window.onload = () => {
+        applySavedTheme();
+        autoMigrate();
+        updateSyncStatusText();
+        switchView('daily');
+    };
+</script>
+</body>
+</html>
