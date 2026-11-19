@@ -3,7 +3,7 @@ name: Build APK from ZIP
 on:
   push:
     branches: [ "main" ]
-   paths:
+    paths:
       - '**.zip'
       - '**.html'
       - '.github/workflows/**'
