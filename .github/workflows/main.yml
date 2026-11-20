@@ -30,13 +30,12 @@ jobs:
         with:
           gradle-version: '8.7'
 
-      - name: 4. Cordova 앱 생성 및 APK 빌드
+      - name: 4. Cordova 앱 생성, 알림 플러그인 설치 및 APK 빌드
         run: |
           npm install -g cordova
           cordova create bulletApp com.taeeun.bulletjournal "마이불렛저널"
           rm -rf bulletApp/www/*
           
-          # zip 파일이나 html 파일을 자동으로 찾아 적용
           if ls *.zip 1> /dev/null 2>&1; then
             unzip -o -j *.zip -d bulletApp/www/
           elif ls *.html 1> /dev/null 2>&1; then
@@ -54,6 +53,7 @@ jobs:
           cd ..
           
           cordova platform add android@13.0.0
+          cordova plugin add cordova-plugin-local-notification
           cordova build android --debug
 
       - name: 5. 완성된 APK 파일 추출
