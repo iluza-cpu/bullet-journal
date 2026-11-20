@@ -6,6 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>마이 불렛저널</title>
+    <script src="cordova.js"></script>
     <style>
         /* =========================================================
            1. 화이트 / 블랙 테마 변수 & 시원한 글자/비율 설정
@@ -74,7 +75,7 @@
         .view.active { display: flex; }
 
         /* =========================================================
-           2. 상단 헤더 (동기화 버튼 + 테마 버튼 포함)
+           2. 상단 헤더
            ========================================================= */
         header {
             display: flex;
@@ -140,7 +141,7 @@
         .header-title span.today-btn:active { background: var(--text); color: var(--bg); }
 
         /* =========================================================
-           3. 메인 영역 & 세로형 인덱스 (1열 고정)
+           3. 메인 영역 & 세로형 인덱스
            ========================================================= */
         main {
             flex: 1;
@@ -182,7 +183,7 @@
         .index-card span.icon { font-size: 1.35rem; font-weight: 800; }
 
         /* =========================================================
-           4. 먼슬리 뷰: 화면 2/3 이상 달력 + 1/3 월별 항목 비율 고정
+           4. 먼슬리 뷰: 화면 2/3 이상 달력 + 1/3 월별 항목
            ========================================================= */
         #view-monthly main {
             display: flex;
@@ -226,6 +227,7 @@
             flex-direction: column;
             flex: 1;
             height: 100%;
+            touch-action: pan-y;
         }
         .cal-days {
             display: grid;
@@ -340,6 +342,12 @@
             word-break: break-all;
             font-size: var(--font-base);
         }
+        .alarm-tag {
+            font-size: 0.78rem;
+            color: var(--text-sub);
+            margin-left: 6px;
+            font-weight: 700;
+        }
         .date-badge {
             font-size: var(--font-sub);
             color: var(--text-sub);
@@ -376,7 +384,7 @@
         }
         .row {
             display: flex;
-            gap: 6px;
+            gap: 5px;
             align-items: center;
             width: 100%;
         }
@@ -384,7 +392,7 @@
         .date-picker-wrap { position: relative; display: flex; align-items: center; }
         .date-picker-btn {
             height: var(--input-h);
-            padding: 0 10px;
+            padding: 0 8px;
             border: 1.5px solid var(--border-strong);
             border-radius: 6px;
             background: var(--bg-sub);
@@ -406,7 +414,7 @@
 
         select.compact-select {
             height: var(--input-h);
-            padding: 0 8px;
+            padding: 0 6px;
             border: 1.5px solid var(--border-strong);
             border-radius: 6px;
             background: var(--bg);
@@ -416,11 +424,11 @@
             outline: none;
         }
 
-        input[type="text"], input[type="password"] {
+        input[type="text"], input[type="password"], input[type="time"], select.modal-select {
             flex: 1;
             min-width: 0;
             height: var(--input-h);
-            padding: 0 12px;
+            padding: 0 10px;
             border: 1.5px solid var(--border-strong);
             border-radius: 6px;
             font-size: var(--font-base);
@@ -438,9 +446,13 @@
             font-size: var(--font-sub);
             font-weight: 800;
             cursor: pointer;
-            padding: 0 10px;
+            padding: 0 8px;
             height: var(--input-h);
             flex-shrink: 0;
+        }
+        button.alarm-toggle.active {
+            background: var(--text);
+            color: var(--bg);
         }
         button.action-btn {
             background: var(--text);
@@ -450,7 +462,7 @@
             font-size: 0.95rem;
             font-weight: 800;
             cursor: pointer;
-            padding: 0 14px;
+            padding: 0 12px;
             height: var(--input-h);
             flex-shrink: 0;
         }
@@ -509,7 +521,7 @@
         }
 
         /* =========================================================
-           7. GitHub 동기화 설정 모달 및 알림 토스트
+           7. 설정 모달 및 알림 토스트
            ========================================================= */
         .modal-overlay {
             position: fixed;
@@ -535,7 +547,7 @@
         }
         .modal-box h3 { margin: 0; font-size: 1.15rem; font-weight: 800; }
         .modal-box label { font-size: 0.85rem; font-weight: 700; color: var(--text-sub); display: block; margin-bottom: 4px; }
-        .modal-box input { width: 100%; }
+        .modal-box input, .modal-box select { width: 100%; }
         .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
 
         .sync-toast {
@@ -562,7 +574,7 @@
     <!-- 1. 인덱스 뷰 -->
     <div id="view-index" class="view">
         <header>
-            <button class="sync-btn" onclick="syncWithGitHub()">⇅ 동기화</button>
+            <button class="sync-btn" onclick="syncWithGitHub(false)">⇅ 동기화</button>
             <div class="header-title"><strong>INDEX</strong></div>
             <button class="theme-btn" onclick="toggleTheme()">◐ 테마</button>
         </header>
@@ -582,7 +594,7 @@
                         <span class="icon">→</span>
                     </div>
                     <div class="index-card" onclick="openSyncModal()">
-                        <div class="desc"><strong>GITHUB SYNC 설정</strong><p id="sync-status-desc">토큰 및 저장소 연결 설정 (두 기기 연동)</p></div>
+                        <div class="desc"><strong>동기화 및 알림 설정</strong><p id="sync-status-desc">GitHub 자동 연동 주기 및 기본 알림 시간 설정</p></div>
                         <span class="icon">⚙</span>
                     </div>
                 </div>
@@ -595,7 +607,7 @@
         <header>
             <div class="header-side">
                 <button class="nav-arrow" onclick="moveDay(-1)">‹</button>
-                <button class="sync-btn" onclick="syncWithGitHub()" title="GitHub 동기화">⇅</button>
+                <button class="sync-btn" onclick="syncWithGitHub(false)" title="GitHub 동기화">⇅</button>
             </div>
             <div class="header-title">
                 <strong id="daily-date-text"></strong>
@@ -606,14 +618,14 @@
                 <button class="nav-arrow" onclick="moveDay(1)">›</button>
             </div>
         </header>
-        <main>
+        <main id="daily-main-area">
             <div id="daily-monthly-section" style="display:none;">
                 <div class="daily-section-title"><span>MONTHLY GOALS</span></div>
                 <ul id="list-daily-monthly"></ul>
             </div>
             <div class="daily-section-title">
                 <span>DAILY LOG</span>
-                <span style="font-weight:500; font-size:0.8rem; color:var(--text-muted);">터치: 완료 / 좌우밀기: 삭제</span>
+                <span style="font-weight:500; font-size:0.78rem; color:var(--text-muted);">터치: 완료 / 줄밀기: 삭제 / 여백밀기: 날짜이동</span>
             </div>
             <ul id="list-daily"></ul>
         </main>
@@ -627,6 +639,7 @@
                     <option value="task">• 할일</option>
                     <option value="note">- 메모</option>
                 </select>
+                <button id="btn-alarm-toggle" class="icon-btn alarm-toggle active" onclick="toggleAlarmFlag()" title="해당 일자 알림 켜기/끄기">🔔</button>
                 <input type="file" id="file-daily" accept="image/*" style="display:none" onchange="handleImage(event, 'daily')">
                 <button class="icon-btn" onclick="document.getElementById('file-daily').click()">+IMG</button>
                 <div class="preview-wrap" id="preview-daily">
@@ -644,7 +657,7 @@
         <header>
             <div class="header-side">
                 <button class="nav-arrow" onclick="moveMonth(-1)">‹</button>
-                <button class="sync-btn" onclick="syncWithGitHub()">⇅</button>
+                <button class="sync-btn" onclick="syncWithGitHub(false)">⇅</button>
             </div>
             <div class="header-title">
                 <strong id="monthly-date-text"></strong>
@@ -658,7 +671,7 @@
         <main>
             <div class="monthly-layout">
                 <div class="cal-col">
-                    <div class="cal-wrapper">
+                    <div class="cal-wrapper" id="monthly-cal-swipe">
                         <div class="cal-days">
                             <div>SUN</div><div>MON</div><div>TUE</div><div>WED</div><div>THU</div><div>FRI</div><div>SAT</div>
                         </div>
@@ -688,7 +701,7 @@
     <!-- 4. 상념 노트 뷰 -->
     <div id="view-notes" class="view">
         <header>
-            <button class="sync-btn" onclick="syncWithGitHub()">⇅</button>
+            <button class="sync-btn" onclick="syncWithGitHub(false)">⇅</button>
             <div class="header-title"><strong>BRAIN DUMP</strong></div>
             <button class="theme-btn" onclick="toggleTheme()">◐</button>
         </header>
@@ -717,17 +730,32 @@
 
 </div>
 
-<!-- GitHub 동기화 설정 모달 -->
+<!-- GitHub 동기화 및 알림 설정 모달 -->
 <div class="modal-overlay" id="sync-modal">
     <div class="modal-box">
-        <h3>GitHub 클라우드 동기화 설정</h3>
+        <h3>동기화 및 알림 설정</h3>
         <div>
-            <label>저장소 경로 (아이디/저장소이름)</label>
+            <label>GitHub 저장소 경로 (아이디/저장소이름)</label>
             <input type="text" id="gh-repo" placeholder="iluza-cpu/bullet-journal">
         </div>
         <div>
-            <label>GitHub Personal Access Token (repo 권한)</label>
+            <label>GitHub Personal Access Token (소문자 ghp_ 시작)</label>
             <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+        </div>
+        <div>
+            <label>자동 동기화 주기</label>
+            <select id="gh-interval" class="modal-select">
+                <option value="0">끄기 (수동 버튼만 사용)</option>
+                <option value="1">1분마다 자동 동기화</option>
+                <option value="5">5분마다 자동 동기화</option>
+                <option value="30">30분마다 자동 동기화</option>
+                <option value="60">1시간마다 자동 동기화</option>
+                <option value="1440">하루(24시간)마다 자동 동기화</option>
+            </select>
+        </div>
+        <div>
+            <label>할 일 기본 알림 시간 (해당 날짜에 울림)</label>
+            <input type="time" id="alarm-default-time" value="09:00">
         </div>
         <div class="modal-actions">
             <button class="icon-btn" onclick="closeSyncModal()">닫기</button>
@@ -736,13 +764,16 @@
     </div>
 </div>
 
-<!-- 상태 토스트 메시지 -->
 <div class="sync-toast" id="sync-toast"></div>
 
 <script>
     let currDate = new Date();
     let currMonth = new Date();
     let tempImages = { daily: null, monthly: null, notes: null };
+    let alarmEnabledForInput = true;
+    let autoSyncTimer = null;
+    let editDebounceTimer = null;
+    let isSyncing = false;
     const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
     const getStr = (d) => {
@@ -770,7 +801,119 @@
         localStorage.setItem('bj_theme', isDark ? 'dark' : 'light');
     }
 
-    // 삭제된 항목 ID 기록 (두 기기 동기화 시 삭제한 항목이 다시 살아나는 현상 방지)
+    // =========================================================
+    // 1. 안드로이드 로컬 알림 기능 (Cordova Local Notification)
+    // =========================================================
+    function getNotifId(rawId) {
+        return Math.abs(Math.floor(Number(rawId) % 2147483000));
+    }
+
+    function toggleAlarmFlag() {
+        alarmEnabledForInput = !alarmEnabledForInput;
+        const btn = document.getElementById('btn-alarm-toggle');
+        if (alarmEnabledForInput) btn.classList.add('active');
+        else btn.classList.remove('active');
+    }
+
+    function scheduleTaskNotification(item, dateStr) {
+        if (!item || !item.alarm || item.status === 'completed') return;
+        if (!(window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local)) return;
+
+        const timeStr = item.alarmTime || localStorage.getItem('bj_alarm_time') || '09:00';
+        const [hh, mm] = timeStr.split(':').map(Number);
+        const [yy, mo, dd] = dateStr.split('-').map(Number);
+        const triggerDate = new Date(yy, mo - 1, dd, hh, mm, 0);
+
+        if (triggerDate.getTime() <= Date.now()) return;
+
+        cordova.plugins.notification.local.schedule({
+            id: getNotifId(item.id),
+            title: `불렛저널 할 일 (${dateStr})`,
+            text: item.text || '예정된 할 일을 확인하세요.',
+            trigger: { at: triggerDate },
+            foreground: true
+        });
+    }
+
+    function cancelTaskNotification(rawId) {
+        if (!(window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local)) return;
+        cordova.plugins.notification.local.cancel(getNotifId(rawId));
+    }
+
+    function rescheduleAllOpenNotifications() {
+        if (!(window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local)) return;
+        const today = getStr(new Date());
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('bj_2') && key.length === 13 && key.substring(3) >= today) {
+                const dateStr = key.substring(3);
+                try {
+                    const list = JSON.parse(localStorage.getItem(key) || '[]');
+                    list.forEach(item => {
+                        if (item.type === 'task' && item.status === 'open' && item.alarm) {
+                            scheduleTaskNotification(item, dateStr);
+                        }
+                    });
+                } catch (e) {}
+            }
+        }
+    }
+
+    document.addEventListener('deviceready', () => {
+        if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
+            cordova.plugins.notification.local.hasPermission(granted => {
+                if (!granted) cordova.plugins.notification.local.requestPermission();
+            });
+            rescheduleAllOpenNotifications();
+        }
+    }, false);
+
+    // =========================================================
+    // 2. 좌우 스와이프로 날짜 / 달 넘기기
+    // =========================================================
+    function initPageSwipeNavigation() {
+        // 데일리 뷰: 빈 영역 스와이프 시 이전/다음 날짜 이동 (항목 줄 위 스와이프는 삭제 기능 유지)
+        const dailyMain = document.getElementById('daily-main-area');
+        let dStartX = 0, dStartY = 0, dIgnore = false;
+
+        dailyMain.addEventListener('touchstart', e => {
+            dIgnore = !!e.target.closest('.swipe-wrap');
+            dStartX = e.touches[0].clientX;
+            dStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        dailyMain.addEventListener('touchend', e => {
+            if (dIgnore) return;
+            const dx = e.changedTouches[0].clientX - dStartX;
+            const dy = e.changedTouches[0].clientY - dStartY;
+            if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                if (dx < 0) moveDay(1);
+                else moveDay(-1);
+            }
+        }, { passive: true });
+
+        // 먼슬리 뷰: 달력 영역 스와이프 시 이전/다음 달 이동
+        const calArea = document.getElementById('monthly-cal-swipe');
+        let mStartX = 0, mStartY = 0;
+
+        calArea.addEventListener('touchstart', e => {
+            mStartX = e.touches[0].clientX;
+            mStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        calArea.addEventListener('touchend', e => {
+            const dx = e.changedTouches[0].clientX - mStartX;
+            const dy = e.changedTouches[0].clientY - mStartY;
+            if (Math.abs(dx) > 65 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                if (dx < 0) moveMonth(1);
+                else moveMonth(-1);
+            }
+        }, { passive: true });
+    }
+
+    // =========================================================
+    // 3. GitHub 양방향 스마트 동기화 및 주기적 자동 연동
+    // =========================================================
     function getDeletedIds() {
         return JSON.parse(localStorage.getItem('bj_deleted_ids') || '[]');
     }
@@ -782,12 +925,11 @@
         }
     }
 
-    // =========================================================
-    // GitHub 양방향 스마트 동기화 로직
-    // =========================================================
     function openSyncModal() {
         document.getElementById('gh-repo').value = localStorage.getItem('bj_gh_repo') || 'iluza-cpu/bullet-journal';
         document.getElementById('gh-token').value = localStorage.getItem('bj_gh_token') || '';
+        document.getElementById('gh-interval').value = localStorage.getItem('bj_sync_interval') || '0';
+        document.getElementById('alarm-default-time').value = localStorage.getItem('bj_alarm_time') || '09:00';
         document.getElementById('sync-modal').classList.add('show');
     }
     function closeSyncModal() {
@@ -796,17 +938,55 @@
     function saveSyncSettings() {
         const repo = document.getElementById('gh-repo').value.trim();
         const token = document.getElementById('gh-token').value.trim();
-        if (!repo || !token) {
-            alert('저장소 경로와 토큰을 모두 입력해 주세요.');
-            return;
+        const interval = document.getElementById('gh-interval').value;
+        const alarmTime = document.getElementById('alarm-default-time').value || '09:00';
+
+        localStorage.setItem('bj_sync_interval', interval);
+        localStorage.setItem('bj_alarm_time', alarmTime);
+        setupAutoSyncTimer();
+
+        if (repo && token) {
+            localStorage.setItem('bj_gh_repo', repo);
+            localStorage.setItem('bj_gh_token', token);
+            closeSyncModal();
+            syncWithGitHub(false);
+        } else {
+            closeSyncModal();
+            showToast('✔ 알림/주기 설정 저장됨');
         }
-        localStorage.setItem('bj_gh_repo', repo);
-        localStorage.setItem('bj_gh_token', token);
-        closeSyncModal();
-        syncWithGitHub();
     }
 
-    // UTF-8 한글/이미지 안전 Base64 인코딩/디코딩
+    function setupAutoSyncTimer() {
+        if (autoSyncTimer) clearInterval(autoSyncTimer);
+        const mins = parseInt(localStorage.getItem('bj_sync_interval') || '0', 10);
+        const token = localStorage.getItem('bj_gh_token');
+        if (mins > 0 && token) {
+            autoSyncTimer = setInterval(() => {
+                syncWithGitHub(true);
+            }, mins * 60 * 1000);
+        }
+        updateSyncStatusText();
+    }
+
+    function triggerDebouncedAutoSync() {
+        const mins = parseInt(localStorage.getItem('bj_sync_interval') || '0', 10);
+        const token = localStorage.getItem('bj_gh_token');
+        if (mins <= 0 || !token) return;
+        clearTimeout(editDebounceTimer);
+        editDebounceTimer = setTimeout(() => {
+            syncWithGitHub(true);
+        }, 3000);
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            const mins = parseInt(localStorage.getItem('bj_sync_interval') || '0', 10);
+            if (mins > 0 && localStorage.getItem('bj_gh_token')) {
+                syncWithGitHub(true);
+            }
+        }
+    });
+
     function utf8ToBase64(str) {
         const bytes = new TextEncoder().encode(str);
         let binary = '';
@@ -828,18 +1008,16 @@
 
     function collectLocalJournalData() {
         const entries = {};
+        const ignoreKeys = ['bj_theme', 'bj_gh_repo', 'bj_gh_token', 'bj_deleted_ids', 'bj_last_sync', 'bj_sync_interval', 'bj_alarm_time'];
         for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
-            if (k && k.startsWith('bj_') && !['bj_theme', 'bj_gh_repo', 'bj_gh_token', 'bj_deleted_ids', 'bj_last_sync'].includes(k)) {
+            if (k && k.startsWith('bj_') && !ignoreKeys.includes(k)) {
                 try {
                     entries[k] = JSON.parse(localStorage.getItem(k) || '[]');
                 } catch (e) {}
             }
         }
-        return {
-            deletedIds: getDeletedIds(),
-            entries: entries
-        };
+        return { deletedIds: getDeletedIds(), entries };
     }
 
     function mergeJournalData(localObj, remoteObj) {
@@ -867,8 +1045,7 @@
                 }
             });
 
-            const mergedList = Array.from(itemMap.values()).sort((a, b) => (a.id || 0) - (b.id || 0));
-            mergedEntries[key] = mergedList;
+            mergedEntries[key] = Array.from(itemMap.values()).sort((a, b) => (a.id || 0) - (b.id || 0));
         });
 
         return {
@@ -877,16 +1054,18 @@
         };
     }
 
-    async function syncWithGitHub() {
+    async function syncWithGitHub(silent = false) {
+        if (isSyncing) return;
         const repo = localStorage.getItem('bj_gh_repo') || 'iluza-cpu/bullet-journal';
         const token = localStorage.getItem('bj_gh_token');
 
         if (!token) {
-            openSyncModal();
+            if (!silent) openSyncModal();
             return;
         }
 
-        showToast('⇅ GitHub와 동기화 중...', 10000);
+        isSyncing = true;
+        if (!silent) showToast('⇅ GitHub와 동기화 중...', 10000);
         const apiUrl = `https://api.github.com/repos/${repo}/contents/bj_backup.json`;
         const headers = {
             'Authorization': `token ${token}`,
@@ -894,7 +1073,6 @@
         };
 
         try {
-            // 1. GitHub에서 기존 백업 파일 불러오기
             let remoteData = { deletedIds: [], entries: {} };
             let fileSha = null;
 
@@ -909,20 +1087,17 @@
                     remoteData = await rawRes.json();
                 }
             } else if (getRes.status !== 404) {
-                throw new Error('GitHub 접근 실패 (권한 또는 저장소 이름을 확인하세요)');
+                throw new Error('GitHub 접근 실패 (토큰/저장소 확인 필요)');
             }
 
-            // 2. 로컬 데이터와 GitHub 데이터 스마트 병합
             const localData = collectLocalJournalData();
             const merged = mergeJournalData(localData, remoteData);
 
-            // 3. 병합된 데이터를 휴대폰 localStorage에 반영
             localStorage.setItem('bj_deleted_ids', JSON.stringify(merged.deletedIds));
             Object.keys(merged.entries).forEach(k => {
                 localStorage.setItem(k, JSON.stringify(merged.entries[k]));
             });
 
-            // 4. 병합된 최신 데이터를 GitHub에 저장
             const putBody = {
                 message: 'Sync bullet journal data',
                 content: utf8ToBase64(JSON.stringify(merged))
@@ -935,9 +1110,7 @@
                 body: JSON.stringify(putBody)
             });
 
-            if (!putRes.ok) {
-                throw new Error('GitHub 업로드 실패 (토큰의 repo 체크 여부를 확인하세요)');
-            }
+            if (!putRes.ok) throw new Error('GitHub 업로드 실패');
 
             const nowStr = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
             localStorage.setItem('bj_last_sync', nowStr);
@@ -946,23 +1119,31 @@
             renderDaily();
             renderMonthly();
             renderNotes();
-            showToast(`✔ 동기화 완료 (${nowStr})`);
+            rescheduleAllOpenNotifications();
+
+            if (!silent) showToast(`✔ 동기화 완료 (${nowStr})`);
         } catch (err) {
-            showToast('✕ 동기화 오류');
-            alert('동기화 중 오류가 발생했습니다:\n' + err.message);
+            if (!silent) {
+                showToast('✕ 동기화 오류');
+                alert('동기화 중 오류가 발생했습니다:\n' + err.message);
+            }
+        } finally {
+            isSyncing = false;
         }
     }
 
     function updateSyncStatusText() {
         const last = localStorage.getItem('bj_last_sync');
+        const mins = parseInt(localStorage.getItem('bj_sync_interval') || '0', 10);
+        const alarmTime = localStorage.getItem('bj_alarm_time') || '09:00';
         const el = document.getElementById('sync-status-desc');
-        if (el && last) {
-            el.innerText = `최근 동기화: ${last} (터치하여 설정 변경)`;
-        }
+        if (!el) return;
+        const autoLabel = mins > 0 ? (mins === 1440 ? '하루마다' : `${mins}분마다`) : '수동';
+        el.innerText = `자동연동: ${autoLabel} | 알림: ${alarmTime}` + (last ? ` (최근 ${last})` : '');
     }
 
     // =========================================================
-    // 기존 불렛저널 핵심 기능
+    // 4. 기본 불렛저널 기능
     // =========================================================
     function updateDateBadge() {
         const val = document.getElementById('input-date-daily').value;
@@ -1033,7 +1214,7 @@
                         item.status = 'migrated';
                         item.updatedAt = Date.now();
                         changed = true;
-                        tDailyData.push({ id: Date.now() + Math.random(), type: 'task', status: 'open', text: item.text, image: item.image, updatedAt: Date.now() });
+                        tDailyData.push({ id: Date.now() + Math.random(), type: 'task', status: 'open', text: item.text, image: item.image, alarm: item.alarm, alarmTime: item.alarmTime, updatedAt: Date.now() });
                         dailyMigrated = true;
                     }
                 });
@@ -1072,10 +1253,12 @@
 
             const deleteItem = () => {
                 markDeletedId(item.id);
+                cancelTaskNotification(item.id);
                 let newData = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 newData = newData.filter(i => i.id !== item.id);
                 localStorage.setItem(storageKey, JSON.stringify(newData));
                 renderCallback();
+                triggerDebouncedAutoSync();
             };
 
             const delBtnLeft = document.createElement('button');
@@ -1112,6 +1295,13 @@
 
             t.appendChild(document.createTextNode(item.text));
 
+            if (!isNote && item.alarm && item.status === 'open') {
+                const aTag = document.createElement('span');
+                aTag.className = 'alarm-tag';
+                aTag.innerText = `🔔${item.alarmTime || ''}`;
+                t.appendChild(aTag);
+            }
+
             if (item.image) {
                 const imgTag = document.createElement('img');
                 imgTag.src = item.image;
@@ -1123,10 +1313,7 @@
             li.append(delBtnLeft, delBtnRight, swipeWrap);
             list.append(li);
 
-            let startX = 0;
-            let startY = 0;
-            let currentDiffX = 0;
-            let isSwiping = false;
+            let startX = 0, startY = 0, currentDiffX = 0, isSwiping = false;
 
             swipeWrap.addEventListener('touchstart', e => {
                 startX = e.touches[0].clientX;
@@ -1149,13 +1336,9 @@
 
             swipeWrap.addEventListener('touchend', () => {
                 swipeWrap.style.transition = 'transform 0.18s ease-out';
-                if (currentDiffX < -40) {
-                    swipeWrap.style.transform = 'translateX(-76px)';
-                } else if (currentDiffX > 40) {
-                    swipeWrap.style.transform = 'translateX(76px)';
-                } else {
-                    swipeWrap.style.transform = 'translateX(0px)';
-                }
+                if (currentDiffX < -40) swipeWrap.style.transform = 'translateX(-76px)';
+                else if (currentDiffX > 40) swipeWrap.style.transform = 'translateX(76px)';
+                else swipeWrap.style.transform = 'translateX(0px)';
             });
 
             swipeWrap.addEventListener('click', () => {
@@ -1170,7 +1353,12 @@
                 tgt.status = tgt.status === 'completed' ? 'open' : 'completed';
                 tgt.updatedAt = Date.now();
                 localStorage.setItem(storageKey, JSON.stringify(newData));
+
+                if (tgt.status === 'completed') cancelTaskNotification(tgt.id);
+                else if (storageKey.startsWith('bj_2')) scheduleTaskNotification(tgt, storageKey.substring(3));
+
                 renderCallback();
+                triggerDebouncedAutoSync();
             });
         });
     }
@@ -1261,8 +1449,11 @@
         if (viewId === 'daily') {
             const targetDate = document.getElementById('input-date-daily').value;
             const type = document.getElementById('input-type-daily').value;
+            const alarmTime = localStorage.getItem('bj_alarm_time') || '09:00';
+            const useAlarm = type === 'task' && alarmEnabledForInput;
             storageKey = 'bj_' + targetDate;
-            newItem = { id: nowMs, type, status: 'open', text: txt, image: img, updatedAt: nowMs };
+            newItem = { id: nowMs, type, status: 'open', text: txt, image: img, alarm: useAlarm, alarmTime, updatedAt: nowMs };
+            if (useAlarm) scheduleTaskNotification(newItem, targetDate);
         } else if (viewId === 'monthly') {
             const targetMonth = getMonthStr(currMonth);
             storageKey = 'bj_month_' + targetMonth;
@@ -1281,16 +1472,25 @@
 
         if (viewId === 'daily') {
             if (document.getElementById('input-date-daily').value === getStr(currDate)) renderDaily();
-            else alert('선택한 날짜(' + document.getElementById('input-date-daily').value + ')에 등록되었습니다.');
+            else showToast(`✔ ${document.getElementById('input-date-daily').value}에 등록됨`);
         } else if (viewId === 'monthly') renderMonthly();
         else if (viewId === 'notes') renderNotes();
+
+        triggerDebouncedAutoSync();
     }
 
     window.onload = () => {
         applySavedTheme();
         autoMigrate();
-        updateSyncStatusText();
+        initPageSwipeNavigation();
+        setupAutoSyncTimer();
         switchView('daily');
+
+        // 자동 동기화가 켜져 있으면 앱 시작 시 최신 데이터 불러오기
+        const mins = parseInt(localStorage.getItem('bj_sync_interval') || '0', 10);
+        if (mins > 0 && localStorage.getItem('bj_gh_token')) {
+            syncWithGitHub(true);
+        }
     };
 </script>
 </body>
